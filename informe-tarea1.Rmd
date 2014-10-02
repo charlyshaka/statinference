@@ -1,0 +1,141 @@
+---
+title: "Tarea 1"
+output: html_document
+---
+
+##PART 1
+
+This is the project for the statistical inference class. In it, you will use simulation to explore inference and do some simple inferential data analysis. The project consists of two parts:
+
+1. Simulation exercises.
+2. Basic inferential data analysis.
+
+You will create a report to answer the questions. Please use knitr to create the reports and convert to a pdf. (I will post a very simple introduction to knitr). Each pdf report should be no more than 2 pages with 3 pages of supporting appendix material if needed (code, figures, etcetera). 
+The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also also 1/lambda. Set lambda = 0.2 for all of the simulations. In this simulation, you will investigate the distribution of averages of 40 exponential(0.2)s. Note that you will need to do a thousand or so simulated averages of 40 exponentials.
+
+Illustrate via simulation and associated explanatory text the properties of the distribution of the mean of 40 exponential(0.2)s.  You should
+
+1. Show where the distribution is centered at and compare it to the theoretical center of the distribution.
+
+```{r}
+setwd("/Users/pacha/Dropbox/R/statinference")
+library(lattice)
+library(gplots)
+
+lambda <- 0.2
+n <- 40
+simulations <- 1:2000
+set.seed(33) #this is needed to make the exercise reproducible (can be any number)
+means <- data.frame(x = sapply(simulations, function(x) {mean(rexp(n, lambda))}))
+```
+```{r}
+mean(means$x) # sampling mean = 5.000542
+(1/lambda) # theoretical mean = 5
+```
+
+
+The distribution is centered at 5.000542 (sampling mean) which is similar to the theoretical mean which is 5
+
+2. Show how variable it is and compare it to the theoretical variance of the distribution.
+
+```{r}
+var(means$x) # sampling var = 0.6564438
+sd(means$x) # sampling sd = 0.8102122
+((1/lambda)/sqrt(n))^2 # theoretical var = 0.625
+(1/lambda)/sqrt(n) # theoretical sd = 0.7905694
+```
+
+Sampling variance and standard deviation are 0.6564438 and 0.8102122 respectively (sampling var and sd) 
+
+Theoretical variance and standard deviation are 0.625 and 0.7905694 respectively (theoretical var and sd)
+
+3. Show that the distribution is approximately normal.
+
+A plot is useless, some plot don't look normal but they are normal and some look normal but they aren't normal, instead of a plot I'll use a normality test. After performing a test a plot can give some support to the test.
+
+```{r}
+shapiro.test(means$x) # p-value = 2.909e-08
+```
+
+p < 0.05 means the data is represented by a normal curve, which is the case
+
+```{r, echo=FALSE}
+tmp <- hist(means$x, freq=TRUE, main="Data histogram and normal curve",
+  	col="lightgreen", axes = FALSE, xlab='Mean', yaxt='n', ylab='Frequency')
+axis(2, pos = 2.5)
+axis(1,at=seq(0,8,1), pos=0)
+
+multiplier <- tmp$counts / tmp$density
+mydensity <- density(means$x)
+mydensity$y <- mydensity$y * multiplier[1]
+
+myx <- seq(2.5, 8, length.out= 100)
+mymean <- mean(means$x)
+mysd <- sd(means$x)
+
+normal <- dnorm(x = myx, mean = mymean, sd = mysd)
+lines(myx, normal * multiplier[1], col = "blue", lwd = 3)
+```
+
+4. Evaluate the coverage of the confidence interval for 1/lambda: $X\pm1.96S_n$.
+
+```{r}
+# 95% confidence interval (Z=1.96)
+mean(means$x) + c(-1,1)*1.96*sd(means$x)/sqrt(nrow(means)) # 4.965033 5.036051
+```
+
+Note both sampling and theoretical mean are contained within confidence interval.
+
+##PART 2
+
+Now in the second portion of the class, we're going to analyze the ToothGrowth data in the R datasets package.
+
+1. Load the ToothGrowth data and perform some basic exploratory data analyses 
+
+```{r}
+data(ToothGrowth)
+nrow(ToothGrowth)
+ncol(ToothGrowth)
+str(ToothGrowth)
+```
+
+```{r}
+ToothGrowth$dose #I must consider 0.5, 1 and 2 as scales
+ToothGrowth$dose = factor(ToothGrowth$dose, levels=c(0.5,1.0,2.0),
+                          labels=c("low","med","high"))
+attach(ToothGrowth)
+table(supp,dose)
+```
+
+```{r, echo=FALSE}
+bwplot(len ~ dose | supp)
+```
+
+
+
+2. Provide a basic summary of the data.
+
+```{r}
+summary(ToothGrowth)
+aggregate(len,list(supp,dose), mean)
+aggregate(len,list(supp,dose), sd)
+```
+
+3. Use confidence intervals and hypothesis tests to compare tooth growth by supp and dose. (Use the techniques from class even if there's other approaches worth considering)
+
+I'm working with a factor (dose), therefore Anova will be useful.
+
+```{r}                 
+anova <- aov(len ~ supp * dose, data=ToothGrowth)
+TukeyHSD(anova)
+```
+
+```{r, echo=FALSE}
+plotmeans(len~interaction(supp,dose,sep=" "),connect=list(c(1,3,5),c(2,4,6)),col=c("red","darkgreen"),xlab="Dose and Supp Combination",main = "Interaction plot with 95% confidence intervals")
+```
+
+4. State your conclusions and the assumptions needed for your conclusions. 
+
+Assumption: The sample components are independent and identically distributed.
+
+Conclussion: Tukey contrast reveals there no statistical evidence for other 'noisy' variables which are relevant, therefore changes in dose and size (independent variables) won't affect lenght (dependent variable)
