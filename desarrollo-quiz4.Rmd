@@ -3,4 +3,151 @@ title: "Desarrollo quiz 4"
 output: html_document
 ---
 
-Subir
+##Question 1
+A pharmaceutical company is interested in testing a potential blood pressure lowering medication. Their first examination considers only subjects that received the medication at baseline then two weeks later. The data are as follows (SBP in mmHg)
+Subject   Baseline 	Week 2
+1 	140 	132
+2 	138 	135
+3 	150 	151
+4 	148 	146
+5 	135 	130
+
+Consider testing the hypothesis that there was a mean reduction in blood pressure? Give the P-value for the associated two sided test.
+
+$H_0:\mu_d=0$ versus $H_A:\mu_d \neq 0$ where $\mu_d$ is the mean difference between followup and baseline.
+
+```{r}
+bl <- c(140, 138, 150, 148, 135)
+fu <- c(132, 135, 151, 146, 130)
+t.test(fu, bl, alternative = "two.sided", paired = TRUE)
+```
+
+Note the equivalence with this
+```{r}
+t.test(fu - bl, alternative = "two.sided")
+```
+
+Note the difference if the test were one sided
+```{r}
+t.test(fu, bl, alternative = "less", paired = TRUE)
+```
+
+##Question 2
+
+A sample of 9 men yielded a sample average brain volume of 1,100cc and a standard deviation of 30cc. What is the complete set of values of $\mu_0$ that a test of $H_0:\mu=\mu_0$ would fail to reject the null hypothesis in a two sided 5% Students t-test?
+
+95% student's T confidence interval.
+```{r}
+1100 + c(-1, 1) * qt(0.975, 8) * 30/sqrt(9)
+```
+
+Potential incorrect answers
+```{r}
+1100 + c(-1, 1) * qnorm(0.975) * 30/sqrt(9)
+1100 + c(-1, 1) * qt(0.95, 8) * 30/sqrt(9)
+1100 + c(-1, 1) * qt(0.975, 8) * 30
+```
+
+##Question 3
+
+Researchers conducted a blind taste test of Coke versus Pepsi. Each of four people was asked which of two blinded drinks given in random order that they preferred. The data was such that 3 of the 4 people chose Coke. Assuming that this sample is representative, report a P-value for a test of the hypothesis that Coke is preferred to Pepsi using a one sided exact test.
+
+$p$: the proportion of people who prefer Coke
+
+The goal is to test $H_0:p=0.5$ versus $H_A:p>0.5$
+
+$X$: the number out of 4 that prefer Coke, assume $X\sim Binomial(p,0.5)$
+
+$P_{value}=P(X\geq 3)= choose(4,3)\times 0.53^3\times 0.5^1+choose(4,4)\times 0.5^4\times 0.5^0$
+
+```{r}
+pbinom(2, size = 4, prob = 0.5, lower.tail = FALSE)
+choose(4, 3) * 0.5^4 + choose(4, 4) * 0.5^4
+```
+
+##Question 4
+
+Infection rates at a hospital above 1 infection per 100 person days at risk are believed to be too high and are used as a benchmark. A hospital that had previously been above the benchmark recently had 10 infections over the last 1,787 person days at risk. About what is the one sided P-value for the relevant test of whether the hospital is below the standard?
+
+$H_0:\lambda=0.01$ versus $H_A:\lambda<0.01$
+
+$X=11$, $t=1,787$ and assume $X \stackrel{H_0}{\sim} Poisson(0.01\times t)$
+
+```{r}
+ppois(10, lambda = 0.01 * 1787)
+```
+
+##Question 5
+
+Suppose that 18 obese subjects were randomized, 9 each, to a new diet pill and a placebo. Subjects’ body mass indices (BMIs) were measured at a baseline and again after having received the treatment or placebo for four weeks. The average difference from follow-up to the baseline (followup - baseline) was −3 kg/m2 for the treated group and 1 kg/m2 for the placebo group. The corresponding standard deviations of the differences was 1.5 kg/m2 for the treatment group and 1.8 kg/m2 for the placebo group. Does the change in BMI over the two year period appear to differ between the treated and placebo groups? Assuming normality of the underlying data and a common population variance, give a pvalue for a two sided t test.
+
+$H_0:\mu_{difference,treated}=\mu_{difference,placebo}$
+
+```{r}
+n1 <- n2 <- 9
+x1 <- -3  ##treated
+x2 <- 1  ##placebo
+s1 <- 1.5  ##treated
+s2 <- 1.8  ##placebo
+s <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2)/(n1 + n2 - 2))
+ts <- (x1 - x2)/(s * sqrt(1/n1 + 1/n2))
+2 * pt(ts, n1 + n2 - 2)
+```
+
+##Question 6
+
+Brain volumes for 9 men yielded a 90% confidence interval of 1,077 cc to 1,123 cc. Would you reject in a two sided 5% hypothesis test of $H_0:\mu=1,078$?
+
+No, you would fail to reject. The 95% interval would be wider than the 90% interval. Since 1,078 is in the narrower 90% interval, it would also be in the wider 95% interval. Thus, in either case it's in the interval and so you would fail to reject.
+
+##Question 7
+
+Researchers would like to conduct a study of 100 healthy adults to detect a four year mean brain volume loss of .01 mm3. Assume that the standard deviation of four year volume loss in this population is .04 mm3. About what would be the power of the study for a 5% one sided test versus a null hypothesis of no volume loss?
+
+The hypothesis is $H_0:\mu_{\Delta}=0$ versus $H_A:\mu_{\Delta}>0$ where $\mu_{\Delta}$ is volume loss (change defined as Baseline - Four Weeks). The test statistics is $10\times \frac{\bar{X}_{\Delta}}{0.04}$ which is rejected if it is larger than $Z_{0.95}=1.645$.
+
+We want to calculate
+$$P\left(\frac{\bar{X}_{\Delta}}{σ_{\Delta}/10}>1.645 \:| \: \mu_{\Delta}=0.01\right)=P\left(\frac{\bar{X}_{\Delta}−0.01}{0.004}>1.645−\frac{0.01}{0.004} \: | \: \mu_{\Delta}=0.01\right)=P(Z>−0.855)=0.8$$
+
+Note that $\bar{X}_{\Delta}$ is $Normal(0.01,0.004)$ under the alternative hypothesis and we want the value of $P(\bar{X}_{\Delta}>1.645\times 0.004)$ under $H_A$.
+
+```{r}
+pnorm(1.645 * 0.004, mean = 0.01, sd = 0.004, lower.tail = FALSE)
+```
+
+##Question 8
+
+Researchers would like to conduct a study of n healthy adults to detect a four year mean brain volume loss of $.01 mm^3$. Assume that the standard deviation of four year volume loss in this population is $.04 mm^3$. About what would be the value of $n$ needded for 90% power of type one error rate of 5% one sided test versus a null hypothesis of no volume loss?
+
+The hypothesis is $H_0:\mu_{\Delta}=0$ versus $H_A:\mu_{\Delta}>0$ where $\mu_{\Delta}$ is volume loss (change defined as Baseline - Four Weeks). The test statistics is $\frac{\bar{X}_{\Delta}}{0.04/\sqrt{n}}$ which is rejected if it is larger than $Z_{0.95}=1.645$.
+
+We want to calculate
+$$P\left(\frac{\bar{X}_{\Delta}}{σ_{\Delta}/\sqrt{n}}>1.645 \:| \: \mu_{\Delta}=0.01\right)=P\left(\frac{\bar{X}_{\Delta}−0.01}{0.04/\sqrt{n}}>1.645−\frac{0.01}{0.04/\sqrt{n}} \: | \: \mu_{\Delta}=0.01\right)=P(Z>1.645 - \sqrt{n}/4)=0.9$$
+
+We need $1.645 - \sqrt{n}/4 = Z_{0.1} = -1.282$ and thus $n= 16\times (1.645+1.282)^2$
+
+```{r}
+ceiling((4 * (qnorm(0.95) - qnorm(0.1)))^2)
+```
+
+##Question 9
+
+As you increase the type one error rate, $\alpha$, what happens to power?
+
+As you require less evidence to reject, i.e. your $\alpha$ rate goes up, you will have larger power
+
+##Question 10
+
+The Daily Planet ran a recent story about Kryptonite poisoning in the water supply after a recent event in Metropolis. Their usual field reporter, Clark Kent, called in sick and so Lois Lane reported the story. Researchers sampled 288 individuals and found mean blood Kryptonite levels of 44, both measured in Lex Luthors per milliliter (LL/ml). They compared this to 288 sampled individuals from Gotham city who had an average level of 42.04. About what is the Pvalue for a two sided Z test of the relevant hypothesis? Assume that the standard deviation is 12 for both groups.
+
+$H_0:\mu_{metropolis}=\mu_{gotham}$ versus $H_A:\mu_{metropolis}\neq \mu_{gotham}$
+
+```{r}
+xM <- 44
+xG <- 42.04
+sM <- sG <- 12
+nM <- nG <- 288
+ts = (xM - xG)/sqrt(sM^2/nM + sG^2/nG)
+2 * pnorm(-abs(ts))
+```
+
